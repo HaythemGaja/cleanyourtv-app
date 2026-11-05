@@ -20,11 +20,14 @@ class SignerAndWifiTest {
     private fun p(s: String) = PackageName(s)
     private val prober = AdbProber(ProbeFixtures.clock())
     private val bundled = File(Fixtures.repoRoot, "android/platform/src/main/assets/bundled")
-    // SHA-256 of the launcher key K1's certificate, as PinnedLauncher.SIGNER_SHA256 holds it.
+    // LEAN TV GRAFT: the bundled launcher is Lean TV (debug key 2206), the bundled curtain is
+    // the unchanged upstream asset (key K1). k1 below is kept as a generic known-signer value
+    // for the fixture tests that do not read a bundled APK.
     private val k1 = Sha256("576418154bec6505bfc709ccaa6ae85b6e09d98eb89f4a25147ca1b4b0505132")
+    private val launcherKey = Sha256("22062f21a4b0a9379abaf81dd16aea68f5c8719dc3cece60719d2f10f99a72a3")
 
     @Test fun signerOfTheBundledApks() {
-        assertEquals(k1, ApkSigners.signerSha256(File(bundled, "cleanyourtv-launcher.apk").readBytes()))
+        assertEquals(launcherKey, ApkSigners.signerSha256(File(bundled, "cleanyourtv-launcher.apk").readBytes()))
         assertEquals(k1, ApkSigners.signerSha256(File(bundled, "cleanyourtv-curtain.apk").readBytes()))
     }
 
@@ -35,10 +38,10 @@ class SignerAndWifiTest {
     @Test fun onlyACertificateTheTvVerifiedCounts() {
         val apk = File(bundled, "cleanyourtv-launcher.apk").readBytes()
         val cert = ApkSigners.certificate(apk)!!
-        assertEquals(k1, ApkSigners.signerSha256(withPairs(apk) { it == V2 }), "v2 alone is what Android 8 verifies")
-        assertNull(ApkSigners.signerSha256(withPairs(apk) { it == V3 }), "a v3 block alone (K1 planted for Android 8)")
+        assertEquals(launcherKey, ApkSigners.signerSha256(withPairs(apk) { it == V2 }), "v2 alone is what Android 8 verifies")
+        assertNull(ApkSigners.signerSha256(withPairs(apk) { it == V3 }), "a v3 block alone (launcher key planted for Android 8)")
         assertNull(ApkSigners.signerSha256(withPairs(apk) { false }), "no scheme block")
-        assertEquals(k1, ApkSigners.signerSha256(withPairs(apk) { true }), "the rebuilt block reads as before")
+        assertEquals(launcherKey, ApkSigners.signerSha256(withPairs(apk) { true }), "the rebuilt block reads as before")
         // The certificate appears once per scheme; another certificate in either one means v2 and v3
         // disagree (an APK signed v2 with another key, K1 planted in v3), so the signer is unknown.
         val at = occurrences(apk, cert)
@@ -126,7 +129,7 @@ class SignerAndWifiTest {
         val apk = File(bundled, "cleanyourtv-launcher.apk").readBytes()
         val s = session(installed = true, apk = apk)
         val snap = prober.snapshot(s, SnapshotReason.BASELINE)
-        assertEquals(k1, snap.packages.getValue(p("com.gathin.tvhome")).signer)
+        assertEquals(launcherKey, snap.packages.getValue(p("com.gathin.tvhome")).signer)
         assertTrue(snap.packages.filterKeys { it != p("com.gathin.tvhome") }.values.all { it.signer == null })
         // Copy (size checked first), pull, delete; the copy never stays on the TV.
         val copy = copies(s).single()

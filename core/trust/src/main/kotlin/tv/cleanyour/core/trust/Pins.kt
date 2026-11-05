@@ -20,28 +20,34 @@ object TrustRoots {
     fun indexVerifier(): MinisignIndexVerifier = MinisignIndexVerifier(indexRoot, keysFloor = BUNDLED_KEYS_SEQUENCE)
 }
 
-// The launcher APK bundled in the phone app (D13, Q1): upstream github.com/Gathin23/cleanyourtv at
-// main after v3.0.0, commit b06ab21 (third_party/cleanyourtv), launcher 3.0 (versionCode 9),
-// `assembleRelease` twice, both re-signed with the dedicated launcher release key and compared by
-// scripts/build-launcher-on-forge.sh (docs/history/reviews/LAUNCHER-300-build-output.txt). The
+// LEAN TV GRAFT (branch lean-tv-graft): the launcher APK bundled in the phone app is no longer
+// upstream github.com/Gathin23/cleanyourtv. It is Lean TV, from github.com/HaythemGaja/lean-tv at
+// commit 29b6af4 (launcher 4.0, versionCode 13, folders + pin_lock on), delivered as the locally
+// re-signed update build (repeatable debug key, signer 22062f21, the same key used for the Lean TV
+// update builds). The package and HOME activity are unchanged (com.gathin.tvhome/.MainActivity),
+// so the phone app's home-switch, ThemeProvider and config.json paths need no change. The
 // verifyLauncherPin task (part of :core:trust check and of :android:platform preBuild) fails the
 // build when the asset differs.
 object PinnedLauncher {
     const val ASSET_NAME = "cleanyourtv-launcher.apk"
-    const val UPSTREAM_COMMIT = "b06ab21105c49900cb1ed76b24414dba1e21d0db"
+    // Lean TV commit this bundled APK was built from (HaythemGaja/lean-tv, not upstream cleanyourtv).
+    const val UPSTREAM_COMMIT = "29b6af404d4c2b924c01ddfa33e1f95b109a50d9"
     const val PACKAGE = "com.gathin.tvhome"
-    const val VERSION_CODE = 9L
-    const val VERSION_NAME = "3.0"
-    const val SIZE = 540_541L
-    const val SHA256 = "9fcc21c0eb81548c2432b3bf89c1d9c6b6ad17dcf7f7fc2e8d90d7ccbea7d60e"
-    // SHA-256 of the signing certificate (DER), "O=cleanyourtv, CN=Clean Your TV launcher", v2 and v3.
-    const val SIGNER_SHA256 = "576418154bec6505bfc709ccaa6ae85b6e09d98eb89f4a25147ca1b4b0505132"
+    const val VERSION_CODE = 13L
+    const val VERSION_NAME = "4.0"
+    const val SIZE = 627_189L
+    const val SHA256 = "4226a8e904ac74cab2b8031289f37d7b2e3ccc6ed83a8d7ee2d3a6dce8dd17a5"
+    // SHA-256 of the signing certificate (DER), "CN=Android Debug, O=Android, C=US", v2 and v3.
+    const val SIGNER_SHA256 = "22062f21a4b0a9379abaf81dd16aea68f5c8719dc3cece60719d2f10f99a72a3"
 }
 
 // The TV curtain bundled in the phone app (RFC-CURTAIN-1): module :tv:curtain of this repo, built
 // twice and compared, then signed with the launcher release key by scripts/build-curtain-on-forge.sh.
-// One signer to pin: SIGNER_SHA256 is the launcher's. The verifyCurtainPin task (part of :core:trust
-// check and of :android:platform preBuild) fails the build when the asset differs.
+// LEAN TV GRAFT: the curtain asset is UNCHANGED, so it keeps its upstream signer, which is no
+// longer the launcher's signer. Each TV APK is still pinned by its own size + SHA-256; the
+// one-signer rule is dropped for this graft, and the tests that asserted it are updated with it.
+// The verifyCurtainPin task (part of :core:trust check and of :android:platform preBuild) fails
+// the build when the asset differs.
 object PinnedCurtain {
     const val ASSET_NAME = "cleanyourtv-curtain.apk"
     const val PACKAGE = "tv.cleanyour.curtain"
@@ -51,7 +57,8 @@ object PinnedCurtain {
     const val VERSION_NAME = "0.1"
     const val SIZE = 65_955L
     const val SHA256 = "eb21e112c97121a3ed7f4db1c7fbf2169bc172a14bb3f8ca781079de4651662e"
-    const val SIGNER_SHA256 = PinnedLauncher.SIGNER_SHA256
+    // Upstream curtain signer: "O=cleanyourtv, CN=Clean Your TV launcher" (unchanged asset).
+    const val SIGNER_SHA256 = "576418154bec6505bfc709ccaa6ae85b6e09d98eb89f4a25147ca1b4b0505132"
 }
 
 // LauncherPin over the BlobStore's bundled asset. bundled() refuses an asset whose bytes are not the
