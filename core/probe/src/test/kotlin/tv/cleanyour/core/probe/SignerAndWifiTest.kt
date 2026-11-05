@@ -153,7 +153,9 @@ class SignerAndWifiTest {
         assertTrue(copies(s).isEmpty())
         // Another APK: copied and read as before.
         val other = session(installed = true, apk = File(bundled, "cleanyourtv-launcher.apk").readBytes(), installedSha = Sha256("cd".repeat(32)))
-        assertEquals(k1, withPins.snapshot(other, SnapshotReason.BASELINE).packages.getValue(p("com.gathin.tvhome")).signer)
+        // LEAN TV GRAFT: the copied APK is the Lean TV launcher (debug key 2206), not the
+        // upstream K1-signed one, so its signer reads as launcherKey.
+        assertEquals(launcherKey, withPins.snapshot(other, SnapshotReason.BASELINE).packages.getValue(p("com.gathin.tvhome")).signer)
         assertEquals(1, copies(other).size)
     }
 
