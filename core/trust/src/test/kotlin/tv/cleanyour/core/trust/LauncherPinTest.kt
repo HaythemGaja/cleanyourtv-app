@@ -28,24 +28,20 @@ class LauncherPinTest {
         assertTrue(LauncherPinCheck.problems(File("/nonexistent.apk")).isNotEmpty())
     }
 
+    // LEAN TV GRAFT: the pin names the Lean TV commit, not upstream cleanyourtv, and the bundled
+    // launcher no longer comes from the third_party submodule, so the submodule-agreement check
+    // does not apply to this graft.
     @Test fun pinIsTheUpstreamPackage() {
         assertEquals("com.gathin.tvhome", PinnedLauncher.PACKAGE)
-        assertEquals("b06ab21105c49900cb1ed76b24414dba1e21d0db", PinnedLauncher.UPSTREAM_COMMIT)
-        val gitlink = File(Repo.root, "third_party/cleanyourtv/.git")
-        if (gitlink.exists()) {
-            // The submodule checkout and the pin must agree (DECISIONS-W1 D-W1-8, ARCHITECTURE 6.2).
-            val head = ProcessBuilder("git", "-C", File(Repo.root, "third_party/cleanyourtv").path, "rev-parse", "HEAD")
-                .redirectErrorStream(true).start().inputStream.bufferedReader().readText().trim()
-            if (Regex("^[0-9a-f]{40}$").matches(head)) assertEquals(PinnedLauncher.UPSTREAM_COMMIT, head)
-        }
+        assertEquals("29b6af404d4c2b924c01ddfa33e1f95b109a50d9", PinnedLauncher.UPSTREAM_COMMIT)
     }
 
     @Test fun bundledLauncherPinServesThePinnedBlob() {
         val bytes = apk.readBytes()
         val artifact = BundledLauncherPin(OneBlob(PinnedLauncher.ASSET_NAME, bytes)).bundled()
         assertEquals(PackageName("com.gathin.tvhome"), artifact.pkg)
-        assertEquals(9L, artifact.versionCode)
-        assertEquals("3.0", artifact.versionName)
+        assertEquals(13L, artifact.versionCode)
+        assertEquals("4.0", artifact.versionName)
         assertEquals(Sha256(PinnedLauncher.SHA256), artifact.sha256)
         assertEquals(Sha256(PinnedLauncher.SIGNER_SHA256), artifact.signer)
         assertEquals(artifact.sha256, artifact.blob.sha256)

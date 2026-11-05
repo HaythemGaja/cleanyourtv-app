@@ -26,13 +26,18 @@ class CurtainPinTest {
         tmp.writeBytes(bytes)
         val problems = PinCheck.problems(PinCheck.curtain, tmp)
         assertTrue(problems.toString(), problems.any { it.startsWith("sha256") })
-        // The launcher's bytes are not the curtain, even with the same signer.
+        // The launcher's bytes are not the curtain; in this graft they also carry a different
+        // signer (Lean TV's debug key vs the curtain's upstream key), so a signer problem is
+        // expected too.
         val launcher = PinCheck.problems(PinCheck.curtain, File(Repo.bundled, PinnedLauncher.ASSET_NAME))
-        assertTrue(launcher.toString(), launcher.any { it.startsWith("sha256") } && launcher.none { it.startsWith("signer") })
+        assertTrue(launcher.toString(), launcher.any { it.startsWith("sha256") } && launcher.any { it.startsWith("signer") })
     }
 
+    // LEAN TV GRAFT: two signers for the two TV apps — the launcher is Lean TV (debug key), the
+    // curtain is the unchanged upstream asset (upstream launcher key). Each is pinned by hash.
     @Test fun oneSignerForBothTvApps() {
-        assertEquals(PinnedLauncher.SIGNER_SHA256, PinnedCurtain.SIGNER_SHA256)
+        assertEquals("22062f21a4b0a9379abaf81dd16aea68f5c8719dc3cece60719d2f10f99a72a3", PinnedLauncher.SIGNER_SHA256)
+        assertEquals("576418154bec6505bfc709ccaa6ae85b6e09d98eb89f4a25147ca1b4b0505132", PinnedCurtain.SIGNER_SHA256)
         assertEquals("tv.cleanyour.curtain", PinnedCurtain.PACKAGE)
         assertTrue(PinnedCurtain.SIZE < 200L * 1024)
     }
@@ -42,7 +47,7 @@ class CurtainPinTest {
         assertEquals(PackageName("tv.cleanyour.curtain"), artifact.pkg)
         assertEquals(PinnedCurtain.VERSION_CODE, artifact.versionCode)
         assertEquals(Sha256(PinnedCurtain.SHA256), artifact.sha256)
-        assertEquals(Sha256(PinnedLauncher.SIGNER_SHA256), artifact.signer)
+        assertEquals(Sha256(PinnedCurtain.SIGNER_SHA256), artifact.signer)
         assertEquals(artifact.sha256, artifact.blob.sha256)
     }
 
